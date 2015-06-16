@@ -21,11 +21,10 @@
 
 package org.la4j.linear;
 
-import org.la4j.factory.Factory;
-import org.la4j.matrix.Matrices;
-import org.la4j.matrix.Matrix;
+import org.la4j.Matrices;
+import org.la4j.Matrix;
 import org.la4j.matrix.functor.MatrixFunction;
-import org.la4j.vector.Vector;
+import org.la4j.Vector;
 
 /**
  * This class represents Jacobi method for solving linear systems. More details
@@ -37,7 +36,7 @@ public class JacobiSolver extends AbstractSolver implements LinearSystemSolver {
 
     private static final long serialVersionUID = 4071505L;
 
-    private Matrix aa;
+    private final Matrix aa;
 
     public JacobiSolver(Matrix a) {
         super(a);
@@ -49,17 +48,17 @@ public class JacobiSolver extends AbstractSolver implements LinearSystemSolver {
             MatrixFunction divider = Matrices.asDivFunction(aa.get(i, i));
             for (int j = 0; j < aa.columns(); j++) {
                 if (i != j) {
-                    aa.update(i, j, divider);
+                    aa.updateAt(i, j, divider);
                 }
             }
         }
     }
 
     @Override
-    public Vector solve(Vector b, Factory factory) {
+    public Vector solve(Vector b) {
         ensureRHSIsCorrect(b);
 
-        Vector current = factory.createVector(unknowns());
+        Vector current =b.blankOfLength(unknowns());
 
         // while it is not a solution
         while (!a.multiply(current).equals(b)) {

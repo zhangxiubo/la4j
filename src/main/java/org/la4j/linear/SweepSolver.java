@@ -21,11 +21,10 @@
 
 package org.la4j.linear;
 
-import org.la4j.factory.Factory;
-import org.la4j.matrix.Matrices;
-import org.la4j.matrix.Matrix;
-import org.la4j.vector.Vector;
-import org.la4j.vector.Vectors;
+import org.la4j.Matrices;
+import org.la4j.Matrix;
+import org.la4j.Vector;
+import org.la4j.Vectors;
 
 /**
  * This class represents <a
@@ -41,14 +40,14 @@ public class SweepSolver extends AbstractSolver implements LinearSystemSolver {
     }
 
     @Override
-    public Vector solve(Vector b, Factory factory) {
+    public Vector solve(Vector b) {
         ensureRHSIsCorrect(b);
 
         // We need a copy, since the algorithm changes data
         Matrix aa = a.copy();
         Vector bb = b.copy();
 
-        Vector x = factory.createVector(aa.columns());
+        Vector x = b.blankOfLength(aa.columns());
 
         for (int i = 0; i < aa.rows() - 1; i++) {
 
@@ -65,17 +64,17 @@ public class SweepSolver extends AbstractSolver implements LinearSystemSolver {
 
             if (maxIndex != i) {
                 aa.swapRows(maxIndex, i);
-                bb.swap(i, maxIndex);
+                bb.swapElements(i, maxIndex);
             }
 
             for (int j = i + 1; j < aa.columns(); j++) {
 
                 double c = aa.get(j, i) / aa.get(i, i);
                 for (int k = i; k < aa.columns(); k++) {
-                    aa.update(j, k, Matrices.asMinusFunction(aa.get(i, k) * c));
+                    aa.updateAt(j, k, Matrices.asMinusFunction(aa.get(i, k) * c));
                 }
 
-                bb.update(j, Vectors.asMinusFunction(bb.get(i) * c));
+                bb.updateAt(j, Vectors.asMinusFunction(bb.get(i) * c));
             }
         }
 

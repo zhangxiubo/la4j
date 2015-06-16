@@ -28,11 +28,6 @@ import org.la4j.decomposition.QRDecompositor;
 import org.la4j.decomposition.RawLUDecompositor;
 import org.la4j.decomposition.RawQRDecompositor;
 import org.la4j.decomposition.SingularValueDecompositor;
-import org.la4j.factory.Basic1DFactory;
-import org.la4j.factory.Basic2DFactory;
-import org.la4j.factory.CCSFactory;
-import org.la4j.factory.CRSFactory;
-import org.la4j.factory.Factory;
 import org.la4j.inversion.GaussJordanInverter;
 import org.la4j.inversion.MatrixInverter;
 import org.la4j.linear.ForwardBackSubstitutionSolver;
@@ -43,7 +38,25 @@ import org.la4j.linear.LinearSystemSolver;
 import org.la4j.linear.SeidelSolver;
 import org.la4j.linear.SquareRootSolver;
 import org.la4j.linear.SweepSolver;
-import org.la4j.matrix.Matrix;
+import org.la4j.operation.MatrixMatrixOperation;
+import org.la4j.operation.MatrixOperation;
+import org.la4j.operation.MatrixVectorOperation;
+import org.la4j.operation.inplace.InPlaceCopyMatrixToMatrix;
+import org.la4j.operation.ooplace.OoPlaceKroneckerProduct;
+import org.la4j.operation.ooplace.OoPlaceMatricesAddition;
+import org.la4j.operation.ooplace.OoPlaceMatricesMultiplication;
+import org.la4j.operation.ooplace.OoPlaceMatricesSubtraction;
+import org.la4j.operation.ooplace.OoPlaceMatrixByItsTransposeMultiplication;
+import org.la4j.operation.ooplace.OoPlaceMatrixByVectorMultiplication;
+import org.la4j.operation.ooplace.OoPlaceMatrixHadamardProduct;
+import org.la4j.operation.VectorMatrixOperation;
+import org.la4j.operation.VectorVectorOperation;
+import org.la4j.operation.ooplace.OoPlaceVectorHadamardProduct;
+import org.la4j.operation.ooplace.OoPlaceInnerProduct;
+import org.la4j.operation.ooplace.OoPlaceOuterProduct;
+import org.la4j.operation.ooplace.OoPlaceVectorByMatrixMultiplication;
+import org.la4j.operation.ooplace.OoPlaceVectorsSubtraction;
+import org.la4j.operation.ooplace.OoPlaceVectorsAddition;
 
 /**
  * Tiny class for common things.
@@ -53,7 +66,7 @@ public final class LinearAlgebra {
     /**
      * The library version.
      */
-    public static final String VERSION = "0.5.0";
+    public static final String VERSION = "0.5.5";
 
     /**
      * The library name.
@@ -63,7 +76,7 @@ public final class LinearAlgebra {
     /**
      * The library release date.
      */
-    public static final String DATE = "March 2014";
+    public static final String DATE = "March 2015";
 
     /**
      * The library full name.
@@ -302,46 +315,45 @@ public final class LinearAlgebra {
      */
     public static final DecompositorFactory SVD = DecompositorFactory.SVD;
 
-    /**
-     * The {@link org.la4j.factory.Basic1DFactory} singleton instance.
-     */
-    public static final Factory BASIC1D_FACTORY = new Basic1DFactory();
+    public final static VectorVectorOperation<Double> OO_PLACE_INNER_PRODUCT =
+        new OoPlaceInnerProduct();
 
-    /**
-     * The {@link org.la4j.factory.Basic2DFactory} singleton instance.
-     */
-    public static final Factory BASIC2D_FACTORY = new Basic2DFactory();
+    public final static VectorVectorOperation<Vector> OO_PLACE_VECTORS_ADDITION =
+        new OoPlaceVectorsAddition();
 
-    /**
-     * The {@link org.la4j.factory.CRSFactory} singleton instance.
-     */
-    public static final Factory CRS_FACTORY = new CRSFactory();
+    public final static VectorVectorOperation<Vector> OO_PLACE_VECTOR_HADAMARD_PRODUCT =
+        new OoPlaceVectorHadamardProduct();
 
-    /**
-     * The {@link org.la4j.factory.CCSFactory} singleton instance.
-     */
-    public static final Factory CCS_FACTORY = new CCSFactory();
+    public final static VectorVectorOperation<Vector> OO_PLACE_VECTORS_SUBTRACTION =
+        new OoPlaceVectorsSubtraction();
 
-    /**
-     * The default dense factory singleton instance. References the {@link LinearAlgebra#BASIC2D_FACTORY}.
-     */
-    public static final Factory DENSE_FACTORY = BASIC2D_FACTORY;
+    public final static VectorMatrixOperation<Vector> OO_PLACE_VECTOR_BY_MATRIX_MULTIPLICATION =
+        new OoPlaceVectorByMatrixMultiplication();
 
-    /**
-     * The default sparse factory singleton instance. References the {@link LinearAlgebra#CRS_FACTORY}.
-     */
-    public static final Factory SPARSE_FACTORY = CRS_FACTORY;
+    public final static VectorVectorOperation<Matrix> OO_PLACE_OUTER_PRODUCT =
+        new OoPlaceOuterProduct();
 
-    /**
-     * The default matrix factory singleton instance.
-     * References the {@link LinearAlgebra#BASIC2D_FACTORY}.
-     */
-    public static final Factory DEFAULT_FACTORY = BASIC2D_FACTORY;
+    public final static MatrixMatrixOperation<Matrix> IN_PLACE_COPY_MATRIX_TO_MATRIX =
+        new InPlaceCopyMatrixToMatrix();
 
-    /**
-     * The array with all factories available. This is useful for testing.
-     */
-    public static final Factory FACTORIES[] = {
-            BASIC1D_FACTORY, BASIC2D_FACTORY, CRS_FACTORY, CCS_FACTORY
-    };
+    public final static MatrixMatrixOperation<Matrix> OO_PLACE_MATRIX_ADDITION =
+        new OoPlaceMatricesAddition();
+
+    public final static MatrixVectorOperation<Vector> OO_PLACE_MATRIX_BY_VECTOR_MULTIPLICATION =
+        new OoPlaceMatrixByVectorMultiplication();
+
+    public final static MatrixMatrixOperation<Matrix> OO_PLACE_MATRICES_SUBTRACTION =
+        new OoPlaceMatricesSubtraction();
+
+    public final static MatrixMatrixOperation<Matrix> OO_PLACE_MATRIX_HADAMARD_PRODUCT =
+        new OoPlaceMatrixHadamardProduct();
+
+    public final static MatrixOperation<Matrix> OO_PLACE_MATRIX_BY_ITS_TRANSPOSE_MULTIPLICATION =
+        new OoPlaceMatrixByItsTransposeMultiplication();
+
+    public final static MatrixMatrixOperation<Matrix> OO_PLACE_KRONECKER_PRODUCT =
+        new OoPlaceKroneckerProduct();
+
+    public final static MatrixMatrixOperation<Matrix> OO_PLACE_MATRICES_MULTIPLICATION =
+        new OoPlaceMatricesMultiplication();
 }

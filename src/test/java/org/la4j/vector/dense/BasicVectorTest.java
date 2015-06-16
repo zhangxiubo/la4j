@@ -21,20 +21,11 @@
 
 package org.la4j.vector.dense;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.la4j.Vectors;
 
-import org.la4j.factory.Basic1DFactory;
-import org.la4j.factory.Factory;
+public class BasicVectorTest extends DenseVectorTest<BasicVector> {
 
-public class BasicVectorTest extends DenseVectorTest {
-
-    @Override
-    public Factory factory() {
-        return new Basic1DFactory();
-    }
-
-    public static Test suite() {
-        return new TestSuite(BasicVectorTest.class);
+    public BasicVectorTest() {
+        super(Vectors.BASIC);
     }
 }

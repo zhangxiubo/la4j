@@ -21,8 +21,8 @@
 
 package org.la4j.linear;
 
-import org.la4j.matrix.Matrix;
-import org.la4j.vector.Vector;
+import org.la4j.Matrix;
+import org.la4j.Vector;
 
 public abstract class AbstractSolver implements LinearSystemSolver {
 
@@ -39,11 +39,6 @@ public abstract class AbstractSolver implements LinearSystemSolver {
         this.a = a;
         this.unknowns = a.columns();
         this.equations = a.rows();
-    }
-
-    @Override
-    public Vector solve(Vector b) {
-        return solve(b, b.factory());
     }
 
     @Override

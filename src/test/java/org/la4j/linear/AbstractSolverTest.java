@@ -21,29 +21,26 @@
 
 package org.la4j.linear;
 
-import junit.framework.TestCase;
-
+import org.junit.Assert;
 import org.la4j.LinearAlgebra;
-import org.la4j.factory.Factory;
-import org.la4j.matrix.Matrix;
-import org.la4j.vector.MockVector;
-import org.la4j.vector.Vector;
+import org.la4j.Matrix;
+import org.la4j.Vector;
+import static org.la4j.M.*;
+import static org.la4j.V.*;
 
-public abstract class AbstractSolverTest extends TestCase {
+public abstract class AbstractSolverTest {
 
-    public void performTest(LinearAlgebra.SolverFactory solverFactory,
-                            double coefficientMatrix[][], 
-                            double rightHandVector[]) {
+    public abstract LinearAlgebra.SolverFactory solverFactory();
 
-        for (Factory factory: LinearAlgebra.FACTORIES) {
+    public void performTest(double coefficientMatrix[][], double rightHandVector[]) {
+        for (Matrix a: ms(coefficientMatrix)) {
+            for (Vector b: vs(rightHandVector)) {
+                LinearSystemSolver solver = a.withSolver(solverFactory());
+                Vector x = solver.solve(b);
+                Vector ax = a.multiply(x);
 
-            Matrix a = factory.createMatrix(coefficientMatrix);
-            Vector b = factory.createVector(rightHandVector);
-
-            LinearSystemSolver solver = a.withSolver(solverFactory);
-            Vector x = solver.solve(b, factory);
-
-            assertEquals(new MockVector(b), new MockVector(a.multiply(x)));
+                Assert.assertTrue(b.equals(ax, 1e-9));
+            }
         }
     }
 }

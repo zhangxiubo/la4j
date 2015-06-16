@@ -21,12 +21,21 @@
 
 package org.la4j.matrix.dense;
 
-import java.util.Arrays;
+import org.junit.Assert;
+import org.junit.Test;
+import org.la4j.matrix.MatrixFactory;
+import org.la4j.matrix.MatrixTest;
+import org.la4j.matrix.DenseMatrix;
 
-import org.la4j.matrix.AbstractMatrixTest;
+import static org.la4j.M.*;
 
-public abstract class DenseMatrixTest extends AbstractMatrixTest {
+public abstract class DenseMatrixTest<T extends DenseMatrix> extends MatrixTest<T> {
 
+    public DenseMatrixTest(MatrixFactory<T> factory) {
+        super(factory);
+    }
+
+    @Test
     public void testToArray() {
         double array[][] = new double[][] { 
                 { 1.0, 0.0, 0.0 },
@@ -34,12 +43,12 @@ public abstract class DenseMatrixTest extends AbstractMatrixTest {
                 { 0.0, 0.0, 9.0 } 
         };
 
-        DenseMatrix a = (DenseMatrix) factory().createMatrix(array);
+        DenseMatrix a = m(array);
 
         double[][] toArray = a.toArray();
 
         for (int i = 0; i < a.rows(); i++) {
-            assertTrue(Arrays.equals(array[i], toArray[i]));
+            Assert.assertArrayEquals(array[i], toArray[i], 1e-5);
         }
     }
 }

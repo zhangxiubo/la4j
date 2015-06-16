@@ -23,19 +23,17 @@ package org.la4j.linear;
 
 import org.la4j.LinearAlgebra;
 import org.la4j.decomposition.MatrixDecompositor;
-import org.la4j.factory.Factory;
-import org.la4j.matrix.Matrices;
-import org.la4j.matrix.Matrix;
-import org.la4j.vector.Vector;
-import org.la4j.vector.Vectors;
+import org.la4j.Matrix;
+import org.la4j.Vector;
+import org.la4j.Vectors;
 
 public class LeastSquaresSolver extends AbstractSolver implements LinearSystemSolver {
 
     private static final long serialVersionUID = 4071505L;
 
     // Matrices from RAW_QR decomposition
-    private Matrix qr;
-    private Matrix r;
+    private final Matrix qr;
+    private final Matrix r;
 
     public LeastSquaresSolver(Matrix a) {
         super(a);
@@ -50,7 +48,7 @@ public class LeastSquaresSolver extends AbstractSolver implements LinearSystemSo
     }
 
     @Override
-    public Vector solve(Vector b, Factory factory) {
+    public Vector solve(Vector b) {
         ensureRHSIsCorrect(b);
 
         int n = unknowns();
@@ -63,7 +61,7 @@ public class LeastSquaresSolver extends AbstractSolver implements LinearSystemSo
             }
         }
 
-        Vector x = b.copy(factory);
+        Vector x = b.copy();
 
         for (int j = 0; j < n; j++) {
 
@@ -75,15 +73,15 @@ public class LeastSquaresSolver extends AbstractSolver implements LinearSystemSo
 
             acc = -acc / qr.get(j, j);
             for (int i = j; i < m; i++) {
-                x.update(i, Vectors.asPlusFunction(acc * qr.get(i, j)));
+                x.updateAt(i, Vectors.asPlusFunction(acc * qr.get(i, j)));
             }
         }
 
         for (int j = n - 1; j >= 0; j--) {
-            x.update(j, Vectors.asDivFunction(r.get(j, j)));
+            x.updateAt(j, Vectors.asDivFunction(r.get(j, j)));
 
             for (int i = 0; i < j; i++) {
-                x.update(i, Vectors.asMinusFunction(x.get(j) * qr.get(i, j)));
+                x.updateAt(i, Vectors.asMinusFunction(x.get(j) * qr.get(i, j)));
             }
         }
 

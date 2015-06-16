@@ -21,36 +21,42 @@
 
 package org.la4j.matrix.sparse;
 
-import org.la4j.matrix.AbstractMatrixTest;
-import org.la4j.matrix.Matrices;
+import org.junit.Assert;
+import org.junit.Test;
+import org.la4j.iterator.MatrixIterator;
+import org.la4j.matrix.MatrixFactory;
+import org.la4j.matrix.MatrixTest;
+import org.la4j.Matrices;
+import org.la4j.matrix.SparseMatrix;
 import org.la4j.matrix.functor.MatrixAccumulator;
-import org.la4j.vector.MockVector;
-import org.la4j.vector.Vector;
+import org.la4j.Vectors;
 
-public abstract class SparseMatrixTest extends AbstractMatrixTest {
+import static org.la4j.M.*;
 
-    public void testCardinality() {
+public abstract class SparseMatrixTest<T extends SparseMatrix> extends MatrixTest<T> {
 
-        double array[][] = new double[][] {
-                { 1.0, 0.0, 0.0 },
-                { 0.0, 5.0, 0.0 }, 
-                { 0.0, 0.0, 9.0 } 
-        };
-
-        SparseMatrix a = (SparseMatrix) factory().createMatrix(array);
-
-        assertEquals(3, a.cardinality());
+    public SparseMatrixTest(MatrixFactory<T> factory) {
+        super(factory);
     }
 
-    public void testLargeMatrix()
-    {
+    @Test
+    public void testCardinality() {
+        SparseMatrix a = m(a(1.0, 0.0, 0.0),
+                           a(0.0, 5.0, 0.0),
+                           a(0.0, 0.0, 9.0));
+
+        Assert.assertEquals(3, a.cardinality());
+    }
+
+    @Test
+    public void testLargeMatrix() {
         int i = 1000000;
         int j = 2000000;
 
-        SparseMatrix a = (SparseMatrix) factory().createMatrix(i, j);
+        SparseMatrix a = mz(i, j);
 
-        assertEquals(i, a.rows());
-        assertEquals(j, a.columns());
+        Assert.assertEquals(i, a.rows());
+        Assert.assertEquals(j, a.columns());
 
         for(int x = 0; x < i; x += 100000) {
             for(int y = 0; y < j; y+= 500000) {
@@ -60,119 +66,169 @@ public abstract class SparseMatrixTest extends AbstractMatrixTest {
 
         for(int x = 0; x < i; x += 100000) {
             for(int y = 0; y < j; y+= 500000) {
-                assertEquals(x * y, (long) a.get(x, y));
+                Assert.assertEquals(x * y, (long) a.get(x, y));
             }
         }
     }
 
+    @Test
     public void testCapacityOverflow() {
         int i = 65536;
         int j = 65536;
 
         // Integer 65536 * 65536 overflows to 0
-        assertEquals(0, i * j);
+        Assert.assertEquals(0, i * j);
 
-        SparseMatrix a = (SparseMatrix) factory().createMatrix(i, j);
+        SparseMatrix a = mz(i, j);
 
-        assertEquals(i, a.rows());
-        assertEquals(j, a.columns());
+        Assert.assertEquals(i, a.rows());
+        Assert.assertEquals(j, a.columns());
 
         a.set(0, 0, 42.0);
-        assertEquals(42.0, a.get(0, 0));
+        Assert.assertEquals(42.0, a.get(0, 0), Matrices.EPS);
 
         a.set(i-1, j-1, 7.0);
-        assertEquals(7.0, a.get(i-1, j-1));
+        Assert.assertEquals(7.0, a.get(i-1, j-1), Matrices.EPS);
 
-        // Since values and Indices array sizes are align'd with CCSMatrix and
+        // Since values and Indices array sizes are aligned with CCSMatrix and
         //  CRSMatrix.MINIMUM_SIZE (=32), we need to set more than 32 values.
-        for(int row = 0 ; row < 32 ; row++) {
+        for(int row = 0 ; row < 33 ; row++) {
             a.set(row, 1, 3.1415);
         }
     }
 
+    @Test
     public void testIssue141() {
         int i = 5000000;
         int j = 7340;
 
         // Test overflow
-        assertTrue(i * j < 0);
+        Assert.assertTrue(i * j < 0);
 
-        SparseMatrix a = (SparseMatrix) factory().createMatrix(5000000, 7340);
+        SparseMatrix a = mz(5000000, 7340);
 
-        assertEquals(i, a.rows());
-        assertEquals(j, a.columns());
+        Assert.assertEquals(i, a.rows());
+        Assert.assertEquals(j, a.columns());
 
         for(int row = 0 ; row < 32 ; row++) {
             a.set(row, 1, 3.1415);
         }
     }
 
+    @Test
     public void testFoldNonZero_3x3() {
-
-        SparseMatrix a = (SparseMatrix) factory().createMatrix(new double[][] {
-                { 1.0, 0.0, 2.0 },
-                { 4.0, 0.0, 5.0 },
-                { 0.0, 0.0, 0.0 }
-        });
+        SparseMatrix a = m(a(1.0, 0.0, 2.0),
+                           a(4.0, 0.0, 5.0),
+                           a(0.0, 0.0, 0.0));
 
         MatrixAccumulator sum = Matrices.asSumAccumulator(0.0);
         MatrixAccumulator product = Matrices.asProductAccumulator(1.0);
 
-        assertEquals(12.0, a.foldNonZero(sum));
+        Assert.assertEquals(12.0, a.foldNonZero(sum), Matrices.EPS);
         // check whether the accumulator were flushed or not
-        assertEquals(12.0, a.foldNonZero(sum));
+        Assert.assertEquals(12.0, a.foldNonZero(sum), Matrices.EPS);
 
-        assertEquals(40.0, a.foldNonZero(product));
+        Assert.assertEquals(40.0, a.foldNonZero(product), Matrices.EPS);
         // check whether the accumulator were flushed or not
-        assertEquals(40.0, a.foldNonZero(product));
+        Assert.assertEquals(40.0, a.foldNonZero(product), Matrices.EPS);
 
-        assertEquals(20.0, a.foldNonZeroInRow(1, product));
-        assertEquals(10.0, a.foldNonZeroInColumn(2, product));
+        Assert.assertEquals(20.0, a.foldNonZeroInRow(1, Vectors.asProductAccumulator(1.0)), Matrices.EPS);
+        Assert.assertEquals(10.0, a.foldNonZeroInColumn(2, Vectors.asProductAccumulator(1.0)), Matrices.EPS);
 
-        Vector nonZeroInColumns = a.foldNonZeroInColumns(product);
-        assertEquals(new MockVector(factory().createVector(new double[] { 4.0, 1.0, 10.0})),
-                nonZeroInColumns);
+        double[] nonZeroInColumns = a.foldNonZeroInColumns(Vectors.asProductAccumulator(1.0));
+        Assert.assertArrayEquals(new double[]{4.0, 1.0, 10.0}, nonZeroInColumns, 1e-5);
 
-        Vector nonZeroInRows = a.foldNonZeroInRows(product);
-        assertEquals(new MockVector(factory().createVector(new double[] { 2.0, 20.0, 1.0})),
-                nonZeroInRows);
+        double[] nonZeroInRows = a.foldNonZeroInRows(Vectors.asProductAccumulator(1.0));
+        Assert.assertArrayEquals(new double[]{2.0, 20.0, 1.0}, nonZeroInRows, 1e-5);
     }
 
+    @Test
     public void testIsZeroAt_5x3() {
+        SparseMatrix a = m(a(1.0, 0.0, 0.0),
+                           a(0.0, 0.0, 2.0),
+                           a(0.0, 0.0, 0.0),
+                           a(0.0, 3.0, 0.0),
+                           a(0.0, 0.0, 0.0));
 
-        SparseMatrix a = (SparseMatrix) factory().createMatrix(new double[][] {
-                { 1.0, 0.0, 0.0 },
-                { 0.0, 0.0, 2.0 },
-                { 0.0, 0.0, 0.0 },
-                { 0.0, 3.0, 0.0 },
-                { 0.0, 0.0, 0.0 }
-        });
-
-        assertTrue(a.isZeroAt(2, 2));
-        assertFalse(a.isZeroAt(3, 1));
+        Assert.assertTrue(a.isZeroAt(2, 2));
+        Assert.assertFalse(a.isZeroAt(3, 1));
     }
 
+    @Test
     public void testNonZeroAt_3x4() {
+        SparseMatrix a = m(a(0.0, 0.0, 2.0, 0.0),
+                           a(0.0, 0.0, 0.0, 0.0),
+                           a(0.0, 1.0, 0.0, 0.0));
 
-        SparseMatrix a = (SparseMatrix) factory().createMatrix(new double[][] {
-                { 0.0, 0.0, 2.0, 0.0 },
-                { 0.0, 0.0, 0.0, 0.0 },
-                { 0.0, 1.0, 0.0, 0.0 }
-        });
-
-        assertTrue(a.nonZeroAt(2, 1));
-        assertFalse(a.nonZeroAt(0, 3));
+        Assert.assertTrue(a.nonZeroAt(2, 1));
+        Assert.assertFalse(a.nonZeroAt(0, 3));
     }
 
+    @Test
     public void testGetOrElse_2x5() {
+        SparseMatrix a = m(a(0.0, 0.0, 0.0, 1.0, 0.0),
+                           a(0.0, 0.0, 3.0, 0.0, 0.0));
 
-        SparseMatrix a = (SparseMatrix) factory().createMatrix(new double[][] {
-                { 0.0, 0.0, 0.0, 1.0, 0.0 },
-                { 0.0, 0.0, 3.0, 0.0, 0.0 },
-        });
-
-        assertEquals(0.0, a.getOrElse(0, 2, 0.0));
-        assertEquals(3.0, a.getOrElse(1, 2, 3.14));
-        assertEquals(4.2, a.getOrElse(1, 3, 4.2));
+        Assert.assertEquals(0.0, a.getOrElse(0, 2, 0.0), Matrices.EPS);
+        Assert.assertEquals(3.0, a.getOrElse(1, 2, 3.14), Matrices.EPS);
+        Assert.assertEquals(4.2, a.getOrElse(1, 3, 4.2), Matrices.EPS);
     }
+    
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void testGetOrElse_IndexCheck_RowNegative() {
+        SparseMatrix a = m(a(0.0, 0.0, 0.0, 1.0, 0.0),
+                           a(0.0, 0.0, 3.0, 0.0, 0.0));
+
+        a.getOrElse(-1, 1, 0.0);
+    }
+    
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void testGetOrElse_IndexCheck_ColumnNegative() {
+        SparseMatrix a = m(a(0.0, 0.0, 0.0, 1.0, 0.0),
+                            a(0.0, 0.0, 3.0, 0.0, 0.0));
+
+        a.getOrElse(1, -1, 0.0);
+    }
+    
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void testGetOrElse_IndexCheck_RowTooLarge() {
+         SparseMatrix a = m(a(0.0, 0.0, 0.0, 1.0, 0.0),
+                            a(0.0, 0.0, 3.0, 0.0, 0.0));
+
+        a.getOrElse(a.rows(), 1, 0.0);
+    }
+    
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void testGetOrElse_IndexCheck_ColumnTooLarge() {
+         SparseMatrix a = m(a(0.0, 0.0, 0.0, 1.0, 0.0),
+                            a(0.0, 0.0, 3.0, 0.0, 0.0));
+
+        a.getOrElse(1, a.columns(), 0.0);
+    }
+    
+    @Test
+    public void testGetOrElse_IndexCheck_Valid() {
+        SparseMatrix a = m(a(0.0, 0.0, 0.0, 1.0, 0.0),
+                           a(0.0, 0.0, 3.0, 0.0, 0.0));
+
+        Assert.assertEquals(0.0, a.getOrElse(1, 1, 0.0), 0.0);
+    }
+
+  @Test
+  public void testNonZeroIterator_issue253() {
+    SparseMatrix a = m(a(0.0, 0.0, 0.0, 1.0, 1.0),
+                       a(0.0, 0.0, 0.0, 0.0, 0.0),
+                       a(0.0, 0.0, 0.0, 0.0, 0.0),
+                       a(1.0, 0.0, 0.0, 0.0, 1.0),
+                       a(1.0, 0.0, 0.0, 1.0, 0.0));
+
+    MatrixIterator it = a.nonZeroIterator();
+
+    while (it.hasNext()) {
+      double x = it.next();
+      int i = it.rowIndex();
+      int j = it.columnIndex();
+      Assert.assertEquals(x, a.get(i, j), 1e-4);
+    }
+  }
 }

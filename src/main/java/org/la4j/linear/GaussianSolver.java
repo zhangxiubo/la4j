@@ -21,10 +21,9 @@
 
 package org.la4j.linear;
 
-import org.la4j.factory.Factory;
-import org.la4j.matrix.Matrices;
-import org.la4j.matrix.Matrix;
-import org.la4j.vector.Vector;
+import org.la4j.Matrices;
+import org.la4j.Matrix;
+import org.la4j.Vector;
 
 /**
  * This class represents Gaussian method for solving linear systems. More details
@@ -37,16 +36,16 @@ public class GaussianSolver extends AbstractSolver implements LinearSystemSolver
     private static final long serialVersionUID = 4071505L;
 
     // augmented matrix
-    private Matrix aa;
+    private final Matrix aa;
 
     public GaussianSolver(Matrix a) {
         super(a);
 
-        this.aa = a.resizeColumns(unknowns() + 1);
+        this.aa = a.copyOfColumns(unknowns() + 1);
     }
 
     @Override
-    public Vector solve(Vector b, Factory factory) {
+    public Vector solve(Vector b) {
         ensureRHSIsCorrect(b);
 
         // extend augmented matrix
@@ -60,7 +59,7 @@ public class GaussianSolver extends AbstractSolver implements LinearSystemSolver
         }
 
         // the 2nd phase
-        Vector x = factory.createVector(aa.columns() - 1);
+        Vector x = b.blankOfLength(aa.columns() - 1);
         backSubstitution(aa, x);
 
         return x;
@@ -95,7 +94,7 @@ public class GaussianSolver extends AbstractSolver implements LinearSystemSolver
                 matrix.set(j, i, 0.0);
 
                 for (int k = i + 1; k < matrix.columns(); k++) {
-                    matrix.update(j, k, Matrices.asMinusFunction(matrix.get(i, k) * c));
+                    matrix.updateAt(j, k, Matrices.asMinusFunction(matrix.get(i, k) * c));
                 }
             }
         }

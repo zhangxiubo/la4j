@@ -21,35 +21,32 @@
 
 package org.la4j.inversion;
 
-import junit.framework.TestCase;
-
+import org.junit.Assert;
+import org.junit.Test;
 import org.la4j.LinearAlgebra;
-import org.la4j.factory.Factory;
-import org.la4j.matrix.Matrix;
-import org.la4j.matrix.MockMatrix;
+import org.la4j.Matrix;
 
-public abstract class AbstractInverterTest extends TestCase {
+import static org.junit.Assert.assertTrue;
+import static org.la4j.M.*;
+
+public abstract class AbstractInverterTest {
 
     public abstract LinearAlgebra.InverterFactory inverterFactory();
 
     protected void performTest(double input[][], LinearAlgebra.InverterFactory inverterFactory) {
-
-        for (Factory factory: LinearAlgebra.FACTORIES) {
-
-            Matrix a = factory.createMatrix(input);
+        for (Matrix a: ms(input)) {
             MatrixInverter inverter = a.withInverter(inverterFactory);
-            Matrix b = inverter.inverse(factory);
+            Matrix b = inverter.inverse();
 
             // a * a^-1 = e
             Matrix c = a.multiply(b);
-            Matrix e = factory.createIdentityMatrix(a.rows());
-
-            assertEquals(new MockMatrix(e), new MockMatrix(c));
+            Matrix e = Matrix.identity(a.rows());
+            Assert.assertTrue(e.equals(c, 1e-9));
         }
     }
 
+    @Test
     public void testInverse_1x1 () {
-
         double input[][] = new double[][] {
                 { -0.5 }
         };
@@ -57,8 +54,8 @@ public abstract class AbstractInverterTest extends TestCase {
         performTest(input, inverterFactory());
     }
 
+    @Test
     public void testInverse_2x2 () {
-
         double input[][] = new double[][] {
                 { 1.0, 0.0 },
                 { 0.0, 1.0 }
@@ -67,6 +64,7 @@ public abstract class AbstractInverterTest extends TestCase {
         performTest(input, inverterFactory());
     }
 
+    @Test
     public void testInverse_4x4() {
 
         double input[][] = new double[][] {
@@ -80,6 +78,7 @@ public abstract class AbstractInverterTest extends TestCase {
         performTest(input, inverterFactory());
     }
 
+    @Test
     public void testInverseInverse_5x5 () {
 
         double input[][] = new double[][] {
@@ -94,6 +93,7 @@ public abstract class AbstractInverterTest extends TestCase {
         performTest(input, inverterFactory());
     }
 
+    @Test
     public void testInverseInverse_6x6 () {
 
         double input[][] = new double[][] {

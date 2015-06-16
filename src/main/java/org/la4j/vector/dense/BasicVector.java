@@ -21,36 +21,125 @@
 
 package org.la4j.vector.dense;
 
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.Random;
 
-import org.la4j.io.VectorToBurningIterator;
-import org.la4j.vector.Vector;
-import org.la4j.io.VectorIterator;
-import org.la4j.vector.Vectors;
-import org.la4j.vector.source.VectorSource;
+import org.la4j.Vector;
+import org.la4j.Vectors;
+import org.la4j.vector.DenseVector;
+import org.la4j.vector.VectorFactory;
 
+/**
+ * A basic dense vector implementation using an array.
+ * 
+ * A dense data structure stores data in an underlying array. Even zero elements
+ * take up memory space. If you want a data structure that will not have zero
+ * elements take up memory space, try a sparse structure.
+ * 
+ * However, fetch/store operations on dense data structures only take O(1) time,
+ * instead of the O(log n) time on sparse structures.
+ * 
+ * {@code BasicVector} stores the underlying data in a standard array.
+ */
 public class BasicVector extends DenseVector {
 
-    private static final long serialVersionUID = 4071505L;
+    private static final byte VECTOR_TAG = (byte) 0x00;
+
+    /**
+     * Creates a zero {@link BasicVector} of the given {@code length}.
+     */
+    public static BasicVector zero(int length) {
+        return new BasicVector(length);
+    }
+
+    /**
+     * Creates a constant {@link BasicVector} of the given {@code length} with
+     * the given {@code value}.
+     */
+    public static BasicVector constant(int length, double value) {
+        double array[] = new double[length];
+        Arrays.fill(array, value);
+
+        return new BasicVector(array);
+    }
+
+    /**
+     * Creates an unit {@link BasicVector} of the given {@code length}.
+     */
+    public static BasicVector unit(int length) {
+        return BasicVector.constant(length, 1.0);
+    }
+
+    /**
+     * Creates a random {@link BasicVector} of the given {@code length} with
+     * the given {@code Random}.
+     */
+    public static BasicVector random(int length, Random random) {
+        double array[] = new double[length];
+        for (int i = 0; i < length; i++) {
+            array[i] = random.nextDouble();
+        }
+
+        return new BasicVector(array);
+    }
+
+    /**
+     * Creates a new {@link BasicVector} from the given {@code array} w/o
+     * copying the underlying array.
+     */
+    public static BasicVector fromArray(double[] array) {
+        return new BasicVector(array);
+    }
+
+    /**
+     * Decodes {@link BasicVector} from the given byte {@code array}.
+     *
+     * @param array the byte array representing a vector
+     *
+     * @return a decoded vector
+     */
+    public static BasicVector fromBinary(byte[] array) {
+        ByteBuffer buffer = ByteBuffer.wrap(array);
+
+        if (buffer.get() != VECTOR_TAG) {
+            throw new IllegalArgumentException("Can not decode BasicVector from the given byte array.");
+        }
+
+        double[] values = new double[buffer.getInt()];
+        for (int i = 0; i < values.length; i++) {
+            values[i] = buffer.getDouble();
+        }
+
+        return new BasicVector(values);
+    }
+
+    /**
+     * Parses {@link BasicVector} from the given CSV string.
+     *
+     * @param csv the CSV string representing a vector
+     *
+     * @return a parsed vector
+     */
+    public static BasicVector fromCSV(String csv) {
+        return Vector.fromCSV(csv).to(Vectors.BASIC);
+    }
+
+    /**
+     * Parses {@link BasicVector} from the given Matrix Market string.
+     *
+     * @param mm the string in Matrix Market format
+     *
+     * @return a parsed vector
+     */
+    public static BasicVector fromMatrixMarket(String mm) {
+        return Vector.fromMatrixMarket(mm).to(Vectors.BASIC);
+    }
 
     private double self[];
 
     public BasicVector() {
         this(0);
-    }
-
-    public BasicVector(Vector vector) {
-        this(Vectors.asVectorSource(vector));
-    }
-
-    public BasicVector(VectorSource source) {
-        this(source.length());
-
-        for (int i = 0; i < length; i++) {
-            self[i] = source.get(i);
-        }
     }
 
     public BasicVector(int length) {
@@ -73,7 +162,7 @@ public class BasicVector extends DenseVector {
     }
 
     @Override
-    public void swap(int i, int j) {
+    public void swapElements(int i, int j) {
         if (i != j) {
             double d = self[i];
             self[i] = self[j];
@@ -82,18 +171,13 @@ public class BasicVector extends DenseVector {
     }
 
     @Override
-    public Vector copy() {
-        return resize(length);
-    }
+    public Vector copyOfLength(int length) {
+      ensureLengthIsCorrect(length);
 
-    @Override
-    public Vector resize(int length) {
-        ensureLengthIsCorrect(length);
+      double $self[] = new double[length];
+      System.arraycopy(self, 0, $self, 0, Math.min($self.length, self.length));
 
-        double $self[] = new double[length];
-        System.arraycopy(self, 0, $self, 0, Math.min($self.length, self.length));
-
-        return new BasicVector($self);
+      return new BasicVector($self);
     }
 
     @Override
@@ -104,57 +188,33 @@ public class BasicVector extends DenseVector {
     }
 
     @Override
-    public void writeExternal(ObjectOutput out) throws IOException {
-
-        out.writeInt(length);
-
-        for (int i = 0; i < length; i++) {
-            out.writeDouble(self[i]);
+    public <T extends Vector> T to(VectorFactory<T> factory) {
+        if (factory.outputClass == BasicVector.class) {
+            return factory.outputClass.cast(this);
         }
+
+        return super.to(factory);
     }
 
     @Override
-    public void readExternal(ObjectInput in) throws IOException,
-            ClassNotFoundException {
-
-        length = in.readInt();
-
-        self = new double[length];
-
-        for (int i = 0; i < length; i++) {
-            self[i] = in.readDouble();
-        }
+    public Vector blankOfLength(int length) {
+        return BasicVector.zero(length);
     }
 
     @Override
-    public VectorIterator iterator() {
-        return new VectorIterator(length) {
-            private int i = -1;
+    public byte[] toBinary() {
+        int size = 1 +          // 1 byte: class tag
+                   4 +          // 4 bytes: length
+                  (8 * length); // 8 * length bytes: values
 
-            @Override
-            public int index() {
-                return i;
-            }
+        ByteBuffer buffer = ByteBuffer.allocate(size);
 
-            @Override
-            public double get() {
-                return self[i];
-            }
+        buffer.put(VECTOR_TAG);
+        buffer.putInt(length);
+        for (double value: self) {
+            buffer.putDouble(value);
+        }
 
-            @Override
-            public void set(double value) {
-                self[i] = value;
-            }
-
-            @Override
-            public boolean hasNext() {
-                return i + 1 < length;
-            }
-
-            @Override
-            public Double next() {
-                return self[++i];
-            }
-        };
+        return buffer.array();
     }
 }

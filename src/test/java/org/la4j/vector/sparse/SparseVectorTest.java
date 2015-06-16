@@ -21,67 +21,115 @@
 
 package org.la4j.vector.sparse;
 
-import org.la4j.vector.AbstractVectorTest;
-import org.la4j.vector.Vectors;
+import org.junit.Assert;
+import org.junit.Test;
+import org.la4j.vector.VectorFactory;
+import org.la4j.vector.VectorTest;
+import org.la4j.Vectors;
+import org.la4j.vector.SparseVector;
 import org.la4j.vector.functor.VectorAccumulator;
 
-public abstract class SparseVectorTest extends AbstractVectorTest {
+public abstract class SparseVectorTest<T extends SparseVector> extends VectorTest<T> {
 
-    public void testCardinality() {
-
-        SparseVector a = (SparseVector) factory().createVector(
-                new double[] { 0.0, 0.0, 0.0, 0.0, 1.0 }
-        );
-
-        assertEquals(1, a.cardinality());
+    public SparseVectorTest(VectorFactory<T> factory) {
+        super(factory);
     }
 
-    public void testFoldNonZero_5() {
+    @Test
+    public void testCardinality() {
+        SparseVector a = v(0.0, 0.0, 0.0, 0.0, 1.0);
+        Assert.assertEquals(1, a.cardinality());
+    }
 
-        SparseVector a = (SparseVector) factory().createVector(
-                new double[] { 2.0, 0.0, 5.0, 0.0, 2.0 }
-        );
+    @Test
+    public void testFoldNonZero_5() {
+        SparseVector a = v(2.0, 0.0, 5.0, 0.0, 2.0);
 
         VectorAccumulator sum = Vectors.asSumAccumulator(0.0);
         VectorAccumulator product = Vectors.asProductAccumulator(1.0);
 
-        assertEquals(9.0, a.foldNonZero(sum));
+        Assert.assertEquals(9.0, a.foldNonZero(sum), Vectors.EPS);
         // check whether the accumulator were flushed
-        assertEquals(9.0, a.foldNonZero(sum));
-
-        assertEquals(20.0, a.foldNonZero(product));
+        Assert.assertEquals(9.0, a.foldNonZero(sum), Vectors.EPS);
+        Assert.assertEquals(20.0, a.foldNonZero(product), Vectors.EPS);
         // check whether the accumulator were flushed
-        assertEquals(20.0, a.foldNonZero(product));
+        Assert.assertEquals(20.0, a.foldNonZero(product), Vectors.EPS);
     }
 
+    @Test
     public void testIsZeroAt_4() {
-
-        SparseVector a = (SparseVector) factory().createVector(
-                new double[] { 1.0, 0.0, 0.0, 4.0 }
-        );
-
-        assertTrue(a.isZeroAt(1));
-        assertFalse(a.isZeroAt(3));
+        SparseVector a = v(1.0, 0.0, 0.0, 4.0);
+        Assert.assertTrue(a.isZeroAt(1));
+        Assert.assertFalse(a.isZeroAt(3));
     }
 
+    @Test
     public void testNonZeroAt_6() {
-
-        SparseVector a = (SparseVector) factory().createVector(
-                new double[] { 0.0, 5.0, 2.0, 0.0, 0.0, 0.0 }
-        );
-
-        assertTrue(a.nonZeroAt(1));
-        assertFalse(a.nonZeroAt(3));
+        SparseVector a = v(0.0, 5.0, 2.0, 0.0, 0.0, 0.0);
+        Assert.assertTrue(a.nonZeroAt(1));
+        Assert.assertFalse(a.nonZeroAt(3));
     }
 
+    @Test
     public void testGetOrElse_5() {
-
-        SparseVector a = (SparseVector) factory().createVector(
-                new double[] { 0.0, 0.0, 1.0, 0.0, 0.0 }
-        );
-
-        assertEquals(0.0, a.getOrElse(1, 0.0));
-        assertEquals(1.0, a.getOrElse(2, 3.14));
-        assertEquals(4.2, a.getOrElse(3, 4.2));
+        SparseVector a =v(0.0, 0.0, 1.0, 0.0, 0.0);
+        Assert.assertEquals(0.0, a.getOrElse(1, 0.0), Vectors.EPS);
+        Assert.assertEquals(1.0, a.getOrElse(2, 3.14), Vectors.EPS);
+        Assert.assertEquals(4.2, a.getOrElse(3, 4.2), Vectors.EPS);
+    }
+    
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void testGet_IndexCheck_Negative() {
+        SparseVector a = v(0.0, 0.0, 1.0, 0.0, 0.0);
+        a.get(-1);
+    }
+    
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void testGet_IndexCheck_TooLarge() {
+        SparseVector a = v(0.0, 0.0, 1.0, 0.0, 0.0);
+        a.get(a.length());
+    }
+    
+    @Test
+    public void testGet_IndexCheck_Valid() {
+        SparseVector a = v(0.0, 0.0, 1.0, 0.0, 0.0);
+        Assert.assertEquals(1.0, a.get(2), 0.0);
+    }
+    
+    @Test(expected=IndexOutOfBoundsException.class)
+    public void testGetOrElse_IndexCheck_Negative() {
+        SparseVector a = v(0.0, 0.0, 1.0, 0.0, 0.0);
+        a.getOrElse(-1, 0.0);
+    }
+    
+    @Test(expected=IndexOutOfBoundsException.class)
+    public void testGetOrElse_IndexCheck_TooLarge() {
+        SparseVector a = v(0.0, 0.0, 1.0, 0.0, 0.0);
+        a.getOrElse(a.length(), 0.0);
+    }
+    
+    @Test
+    public void testGetOrElse_IndexCheck_Valid() {
+        SparseVector a = v(0.0, 0.0, 1.0, 0.0, 0.0);
+        Assert.assertEquals(1.0, a.getOrElse(2, 0.0), 0.0);
+    }
+    
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void testSet_IndexCheck_Negative() {
+        SparseVector a = v(0.0, 0.0, 1.0, 0.0, 0.0);
+        a.set(-1, 1.0);
+    }
+    
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void testSet_IndexCheck_TooLarge() {
+        SparseVector a = v(0.0, 0.0, 1.0, 0.0, 0.0);
+        a.set(a.length(), 1.0);
+    }
+    
+    @Test
+    public void testSet_IndexCheck_Valid() {
+        SparseVector a = v(0.0, 0.0, 1.0, 0.0, 0.0);
+        a.set(0, 1.0);
+        Assert.assertEquals(1.0, a.get(0), 0.0);
     }
 }

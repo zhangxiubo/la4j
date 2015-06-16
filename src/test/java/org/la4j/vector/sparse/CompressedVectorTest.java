@@ -21,20 +21,11 @@
 
 package org.la4j.vector.sparse;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.la4j.Vectors;
 
-import org.la4j.factory.CRSFactory;
-import org.la4j.factory.Factory;
+public class CompressedVectorTest extends SparseVectorTest<CompressedVector> {
 
-public class CompressedVectorTest extends SparseVectorTest {
-
-    @Override
-    public Factory factory() {
-        return new CRSFactory();
-    }
-
-    public static Test suite() {
-        return new TestSuite(CompressedVectorTest.class);
+    public CompressedVectorTest() {
+        super(Vectors.COMPRESSED);
     }
 }
